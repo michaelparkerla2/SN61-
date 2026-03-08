@@ -1,0 +1,11 @@
+{
+  "name": "rt-ada-detection-v2",
+  "version": "2025.03.08-v5",
+  "description": "RedTeam SN61 ADA Detection v2 - Browser Automation Detection",
+  "type": "module",
+  "author": "UID 182",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'Tests run in NSTBrowser environment'"
+  }
+}
