@@ -287,6 +287,101 @@ export default function SNappYDashboard() {
           <TabsContent value="api">
             <ApiDocs />
           </TabsContent>
+
+          <TabsContent value="ridges" className="space-y-6">
+            {/* Ridges Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg bg-card">
+              <div>
+                <h2 className="text-lg font-semibold">Ridges Pattern Analysis</h2>
+                <p className="text-sm text-muted-foreground">
+                  Analyze your memory patterns to find winning strategies
+                </p>
+                {lastIngest && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Last synced: {new Date(lastIngest).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchRidgesData}
+                  disabled={ridgesLoading}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${ridgesLoading ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleIngest}
+                  disabled={isIngesting}
+                  className="gap-2"
+                >
+                  {isIngesting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <BarChart3 className="h-4 w-4" />
+                  )}
+                  {isIngesting ? "Ingesting..." : "Sync & Analyze"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Ridges Sub-Tabs */}
+            <div className="flex gap-2 border-b pb-2">
+              <Button
+                variant={ridgesTab === "overview" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setRidgesTab("overview")}
+              >
+                Overview
+              </Button>
+              <Button
+                variant={ridgesTab === "strategy" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setRidgesTab("strategy")}
+              >
+                Strategy
+              </Button>
+              <Button
+                variant={ridgesTab === "similarity" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setRidgesTab("similarity")}
+              >
+                Similarity Check
+              </Button>
+            </div>
+
+            {ridgesLoading && !leaderboardData ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                {ridgesTab === "overview" && (
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <Leaderboard data={leaderboardData} />
+                    <AnalysisSummary data={analysisData} />
+                    <div className="lg:col-span-2">
+                      <FrameworkMap data={frameworkData} />
+                    </div>
+                  </div>
+                )}
+
+                {ridgesTab === "strategy" && (
+                  <div className="space-y-6">
+                    <StrategyCard data={recommendData} />
+                  </div>
+                )}
+
+                {ridgesTab === "similarity" && (
+                  <SimilarityChecker memories={memories} />
+                )}
+              </>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
 
