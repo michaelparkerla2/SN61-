@@ -289,7 +289,7 @@ export function RedTeamDashboard() {
               <p className="text-sm text-muted-foreground">Latest data:</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 p-3 bg-secondary rounded-md font-mono text-sm text-foreground overflow-x-auto">
-                  GET {baseUrl}/api/redteam-data
+                  GET {baseUrl ? `${baseUrl}/api/redteam-data` : '/api/redteam-data'}
                 </code>
                 <Button 
                   variant="outline" 
@@ -306,7 +306,7 @@ export function RedTeamDashboard() {
               <p className="text-sm text-muted-foreground">Historical data:</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 p-3 bg-secondary rounded-md font-mono text-sm text-foreground overflow-x-auto">
-                  GET {baseUrl}/api/redteam-history
+                  GET {baseUrl ? `${baseUrl}/api/redteam-history` : '/api/redteam-history'}
                 </code>
                 <Button 
                   variant="outline" 
