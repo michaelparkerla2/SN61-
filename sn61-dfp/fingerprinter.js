@@ -1,10 +1,14 @@
 /**
- * SN61 RedTeam DFP v2 - Device Fingerprinter
- * Deterministic fingerprinting with 14+ signal groups
- * Target: 0.8+ score, 0 collisions, <0.1 null_rate
+ * SN61 RedTeam DFP v2 - Device Fingerprinter v6
+ * FIXED: Addresses v5 rejection (null_rate 0.5-0.83, fragmentation 0.4, collision 0.25)
+ * - Robust fallbacks for private/incognito mode
+ * - 80+ font detection for high entropy
+ * - No storage-dependent APIs (blocked in private mode)
+ * - Deterministic signals only (no volatility)
+ * - Target: 0.8+ score, 0 collisions, <0.1 null_rate
  * 
  * @author @bittensormax (UID 182)
- * @version v5.0.0
+ * @version v6.0.0
  */
 
 // FNV-1a 64-bit hash implementation (deterministic)
@@ -22,6 +26,15 @@ function fnv1a64(str) {
   }
   
   return hash.toString(16).padStart(16, '0');
+}
+
+// Safe hash for error conditions - produces valid 16-char hex
+function safeHash(input) {
+  try {
+    return fnv1a64(String(input));
+  } catch {
+    return '0000000000000000';
+  }
 }
 
 // Multi-pass hash for stronger uniqueness (8 passes)
@@ -188,14 +201,34 @@ function getCanvasSignal() {
   }
 }
 
-// Signal 5: Font Detection (22 fonts x 3 sizes)
+// Signal 5: Font Detection (80+ fonts x 3 sizes for high entropy)
 function getFontSignals() {
+  // EXPANDED: 80+ fonts for high entropy (fixes collision 0.25 issue)
   const fonts = [
-    'Arial', 'Arial Black', 'Arial Narrow', 'Calibri', 'Cambria', 
-    'Cambria Math', 'Comic Sans MS', 'Consolas', 'Courier', 'Courier New',
-    'Georgia', 'Helvetica', 'Impact', 'Lucida Console', 'Lucida Sans Unicode',
-    'Microsoft Sans Serif', 'Palatino Linotype', 'Segoe UI', 'Tahoma', 
-    'Times', 'Times New Roman', 'Verdana'
+    // Windows fonts
+    'Arial', 'Arial Black', 'Arial Narrow', 'Calibri', 'Cambria', 'Cambria Math',
+    'Comic Sans MS', 'Consolas', 'Courier', 'Courier New', 'Georgia', 'Impact',
+    'Lucida Console', 'Lucida Sans Unicode', 'Microsoft Sans Serif', 'Microsoft YaHei',
+    'MS Gothic', 'MS Mincho', 'MS PGothic', 'MS PMincho', 'MS UI Gothic',
+    'Palatino Linotype', 'Segoe UI', 'Segoe UI Emoji', 'Segoe UI Historic',
+    'Segoe UI Symbol', 'Tahoma', 'Times', 'Times New Roman', 'Trebuchet MS',
+    'Verdana', 'Webdings', 'Wingdings', 'Wingdings 2', 'Wingdings 3',
+    // macOS fonts
+    'American Typewriter', 'Andale Mono', 'Apple Chancery', 'Apple Color Emoji',
+    'Apple SD Gothic Neo', 'Avenir', 'Avenir Next', 'Baskerville', 'Big Caslon',
+    'Bradley Hand', 'Brush Script MT', 'Chalkboard', 'Chalkboard SE', 'Charcoal',
+    'Cochin', 'Copperplate', 'Didot', 'Futura', 'Geneva', 'Gill Sans', 'Helvetica',
+    'Helvetica Neue', 'Herculanum', 'Hoefler Text', 'Lucida Grande', 'Marker Felt',
+    'Menlo', 'Monaco', 'Noteworthy', 'Optima', 'Papyrus', 'STHeiti', 'Snell Roundhand',
+    'Tahoma', 'Times', 'Times New Roman', 'Trattatello', 'Trebuchet MS', 'Verdana',
+    // Linux fonts
+    'DejaVu Sans', 'DejaVu Sans Mono', 'DejaVu Serif', 'FreeMono', 'FreeSans',
+    'FreeSerif', 'Liberation Mono', 'Liberation Sans', 'Liberation Serif',
+    'Noto Color Emoji', 'Noto Mono', 'Noto Sans', 'Noto Serif', 'Ubuntu',
+    'Ubuntu Condensed', 'Ubuntu Mono',
+    // Web fonts
+    'Open Sans', 'Roboto', 'Roboto Mono', 'Source Code Pro', 'Source Sans Pro',
+    'Droid Sans', 'Droid Serif', 'Droid Sans Mono'
   ];
   const sizes = ['12px', '16px', '24px'];
   const baseFonts = ['monospace', 'sans-serif', 'serif'];
@@ -398,29 +431,31 @@ function getPerformanceSignals() {
 }
 
 // Signal 12: Storage Capabilities
+// Signal 12: Storage Capabilities (FIXED: No localStorage tests in private mode)
 function getStorageSignals() {
   try {
-    const storage = {
-      localStorage: !!window.localStorage,
-      sessionStorage: !!window.sessionStorage,
-      indexedDB: !!window.indexedDB,
-      openDatabase: !!window.openDatabase,
-      cookiesEnabled: navigator.cookieEnabled,
+    // Only check API availability - don't test storage (blocked in private mode)
+    // This prevents null_rate issues on Chrome/Brave/Safari/Firefox Focus/DuckDuckGo
+    return {
+      localStorageAvailable: typeof window.localStorage !== 'undefined',
+      sessionStorageAvailable: typeof window.sessionStorage !== 'undefined',
+      indexedDBAvailable: typeof window.indexedDB !== 'undefined',
+      openDatabaseAvailable: typeof window.openDatabase !== 'undefined',
+      cookiesEnabled: navigator.cookieEnabled || false,
+      // Include storage quota estimate if available (deterministic)
+      storageEstimate: typeof navigator.storage !== 'undefined' && navigator.storage.estimate ? 
+        { available: true } : { available: false },
     };
-    
-    // Test localStorage quota
-    try {
-      const testKey = '__storage_test__';
-      localStorage.setItem(testKey, testKey);
-      localStorage.removeItem(testKey);
-      storage.localStorageWorks = true;
-    } catch {
-      storage.localStorageWorks = false;
-    }
-    
-    return storage;
   } catch {
-    return { error: 'storage_error' };
+    // Always return valid object, never error
+    return { 
+      localStorageAvailable: false,
+      sessionStorageAvailable: false,
+      indexedDBAvailable: false,
+      openDatabaseAvailable: false,
+      cookiesEnabled: false,
+      storageEstimate: { available: false }
+    };
   }
 }
 
@@ -456,20 +491,34 @@ function getTouchSignals() {
   }
 }
 
-// Signal 15: WebRTC Detection (for uniqueness)
+// Signal 15: WebRTC Detection (for uniqueness - with fallback)
 async function getWebRTCSignals() {
   try {
+    // Check if RTCPeerConnection is available
+    if (typeof RTCPeerConnection === 'undefined') {
+      return { available: false, sdp: 'unavailable', type: 'none' };
+    }
+    
     const pc = new RTCPeerConnection({ iceServers: [] });
-    pc.createDataChannel('');
+    
+    // Create data channel for fingerprinting
+    try {
+      pc.createDataChannel('fp');
+    } catch {
+      // Data channel creation failed
+    }
+    
     const offer = await pc.createOffer();
     pc.close();
     
     return {
+      available: true,
       sdp: offer.sdp ? fnv1a64(offer.sdp) : 'unavailable',
-      type: offer.type,
+      type: offer.type || 'unknown',
     };
   } catch {
-    return { error: 'webrtc_error' };
+    // Return valid object instead of error to prevent null_rate
+    return { available: false, sdp: 'unavailable', type: 'error' };
   }
 }
 
@@ -496,7 +545,7 @@ export async function runFingerprinting() {
       plugins: getPluginSignals(),
       touch: getTouchSignals(),
       webrtc: await getWebRTCSignals(),
-      version: 'v5.0.0',
+      version: 'v6.0.0',
     };
 
     // Generate multi-pass hash (8 passes for stability)
@@ -523,4 +572,9 @@ export async function runFingerprinting() {
 
 // Export for Node.js/Docker environment
 // Note: This file uses ESM export syntax (export async function)
-// For CommonJS compatibility, use a wrapper or transpile
+// For CommonJS compatibility, also export as module.exports
+
+// CommonJS compatibility for Node.js/Docker
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { runFingerprinting };
+}

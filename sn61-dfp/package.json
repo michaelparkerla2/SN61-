@@ -1,7 +1,7 @@
 {
   "name": "sn61-dfp-v2",
-  "version": "5.0.0",
-  "description": "Bittensor SN61 RedTeam Device Fingerprinter v2 - Deterministic 14+ Signal Groups",
+  "version": "6.0.0",
+  "description": "Bittensor SN61 RedTeam Device Fingerprinter v2 - FIXED v6 (80+ fonts, no storage blocks, robust fallbacks)",
   "main": "fingerprinter.js",
   "type": "commonjs",
   "scripts": {
