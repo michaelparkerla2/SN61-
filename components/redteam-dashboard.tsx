@@ -31,6 +31,7 @@ export function RedTeamDashboard() {
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [baseUrl, setBaseUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleBrowseClick = () => {
@@ -44,6 +45,7 @@ export function RedTeamDashboard() {
   };
 
   useEffect(() => {
+    setBaseUrl(window.location.origin);
     fetchData();
   }, []);
 
@@ -156,8 +158,6 @@ export function RedTeamDashboard() {
     if (!aIsYours && bIsYours) return 1;
     return 0;
   });
-
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
   return (
     <div className="min-h-screen bg-background">
