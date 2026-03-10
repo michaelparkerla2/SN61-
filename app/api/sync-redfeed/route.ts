@@ -25,10 +25,88 @@ interface ProcessedEntry {
   penalty: number
   note: string
   validationOutput: string
-  comparisonLogs: string
+  comparisonLogs: unknown
+  comparisonReason: string
   resultJson: unknown
+  challengeType: "ADA" | "DFP" | "unknown"
+  framework: string
   timestamp: string
   syncedAt: string
+}
+
+// Clean double-encoded JSON strings
+function cleanJsonString(str: string): string {
+  if (!str) return ""
+  // Remove surrounding quotes and unescape double quotes
+  return str.replace(/^"|"$/g, '').replace(/""/g, '"')
+}
+
+// Parse Comparison Logs and extract reason
+function parseComparisonLogs(logs: string): { parsed: unknown; reason: string } {
+  if (!logs || !logs.trim()) return { parsed: null, reason: "" }
+  
+  try {
+    // Comparison Logs is valid JSON with quoted keys
+    const parsed = JSON.parse(logs)
+    
+    // Extract reason from first entry
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return { parsed, reason: parsed[0]?.reason || parsed[0]?.message || "" }
+    } else if (parsed && typeof parsed === "object") {
+      return { parsed, reason: parsed.reason || parsed.message || "" }
+    }
+    
+    return { parsed, reason: "" }
+  } catch {
+    // Try cleaning first
+    try {
+      const cleaned = cleanJsonString(logs)
+      const parsed = JSON.parse(cleaned)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return { parsed, reason: parsed[0]?.reason || "" }
+      }
+      return { parsed, reason: "" }
+    } catch {
+      return { parsed: null, reason: "" }
+    }
+  }
+}
+
+// Parse Result JSON and detect challenge type + framework
+function parseResultJson(resultStr: string): { 
+  parsed: unknown
+  challengeType: "ADA" | "DFP" | "unknown"
+  framework: string 
+} {
+  if (!resultStr || !resultStr.trim()) {
+    return { parsed: null, challengeType: "unknown", framework: "" }
+  }
+  
+  try {
+    // Clean double-encoded quotes before parsing
+    const cleaned = cleanJsonString(resultStr)
+    const parsed = JSON.parse(cleaned)
+    
+    // Detect challenge type based on fields
+    let challengeType: "ADA" | "DFP" | "unknown" = "unknown"
+    let framework = ""
+    
+    if (parsed) {
+      // ADA challenge: has expected_framework, webdriver, websocket fields
+      if ("expected_framework" in parsed || "webdriver" in parsed || "websocket" in parsed) {
+        challengeType = "ADA"
+        framework = parsed.expected_framework || parsed.detected || ""
+      }
+      // DFP challenge: has hash or fingerprint fields
+      else if ("hash" in parsed || "fingerprint" in parsed || "canvas" in parsed) {
+        challengeType = "DFP"
+      }
+    }
+    
+    return { parsed, challengeType, framework }
+  } catch {
+    return { parsed: null, challengeType: "unknown", framework: "" }
+  }
 }
 
 interface Learning {
@@ -179,16 +257,17 @@ export async function POST() {
       })
     }
     
-    // Process entries - map RedFeed field names
+    // Process entries - map RedFeed field names with proper parsing
     const processed: ProcessedEntry[] = rows.map((row) => {
-      let resultJson = null
-      try {
-        if (row["Result JSON"] && String(row["Result JSON"]).trim()) {
-          resultJson = JSON.parse(String(row["Result JSON"]))
-        }
-      } catch {
-        // Ignore JSON parse errors
-      }
+      // Parse Comparison Logs (valid JSON with quoted keys)
+      const { parsed: comparisonLogs, reason: comparisonReason } = parseComparisonLogs(
+        String(row["Comparison Logs"] || "")
+      )
+      
+      // Parse Result JSON (may have double-encoded quotes)
+      const { parsed: resultJson, challengeType, framework } = parseResultJson(
+        String(row["Result JSON"] || "")
+      )
       
       return {
         miner: String(row["Miner UID"] || "unknown"),
@@ -196,8 +275,11 @@ export async function POST() {
         penalty: parseFloat(String(row["Penalty"] || 0)) || 0,
         note: String(row["Note"] || ""),
         validationOutput: String(row["Validation Output"] || ""),
-        comparisonLogs: String(row["Comparison Logs"] || ""),
+        comparisonLogs,
+        comparisonReason,
         resultJson,
+        challengeType,
+        framework,
         timestamp: String(row["Commit Time"] || row["Scored Time"] || new Date().toISOString()),
         syncedAt: new Date().toISOString()
       }
@@ -257,7 +339,11 @@ export async function POST() {
       summary: {
         highPenaltyEntries: processed.filter(e => e.penalty > 0.3).length,
         highScoreEntries: processed.filter(e => e.score > 0.7).length,
-        uniqueMiners: [...new Set(processed.map(e => e.miner))].length
+        uniqueMiners: [...new Set(processed.map(e => e.miner))].length,
+        adaChallenges: processed.filter(e => e.challengeType === "ADA").length,
+        dfpChallenges: processed.filter(e => e.challengeType === "DFP").length,
+        unknownChallenges: processed.filter(e => e.challengeType === "unknown").length,
+        frameworks: [...new Set(processed.filter(e => e.framework).map(e => e.framework))]
       }
     })
     
