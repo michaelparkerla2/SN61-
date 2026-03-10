@@ -8,8 +8,13 @@ import { SearchForm } from "@/components/search-form"
 import { AddMemoryForm } from "@/components/add-memory-form"
 import { StatsCards } from "@/components/stats-cards"
 import { ApiDocs } from "@/components/api-docs"
-import { RefreshCw, Download, Github, Database, History, Code } from "lucide-react"
+import { RefreshCw, Download, Github, Database, History, Code, BarChart3, Loader2 } from "lucide-react"
 import type { MemoryLog } from "@/lib/redis"
+import { Leaderboard } from "@/components/ridges/leaderboard"
+import { AnalysisSummary } from "@/components/ridges/analysis-summary"
+import { StrategyCard } from "@/components/ridges/strategy-card"
+import { FrameworkMap } from "@/components/ridges/framework-map"
+import { SimilarityChecker } from "@/components/ridges/similarity-checker"
 
 export default function SNappYDashboard() {
   const [memories, setMemories] = useState<Array<MemoryLog & { key?: string }>>([])
@@ -17,6 +22,16 @@ export default function SNappYDashboard() {
   const [isLoading, setIsLoading] = useState(false)
   const [isStoring, setIsStoring] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+  
+  // Ridges state
+  const [ridgesTab, setRidgesTab] = useState<"overview" | "strategy" | "similarity">("overview")
+  const [isIngesting, setIsIngesting] = useState(false)
+  const [ridgesLoading, setRidgesLoading] = useState(false)
+  const [leaderboardData, setLeaderboardData] = useState<unknown>(null)
+  const [analysisData, setAnalysisData] = useState<unknown>(null)
+  const [recommendData, setRecommendData] = useState<unknown>(null)
+  const [frameworkData, setFrameworkData] = useState<unknown>(null)
+  const [lastIngest, setLastIngest] = useState<string | null>(null)
 
   const fetchHistory = useCallback(async () => {
     setIsLoading(true)
@@ -35,6 +50,52 @@ export default function SNappYDashboard() {
   useEffect(() => {
     fetchHistory()
   }, [fetchHistory])
+
+  // Ridges data fetching
+  const fetchRidgesData = useCallback(async () => {
+    setRidgesLoading(true)
+    try {
+      const [leaderboard, analysis, recommend, framework] = await Promise.all([
+        fetch("/api/ridges/leaderboard").then(r => r.json()).catch(() => null),
+        fetch("/api/ridges/analyze").then(r => r.json()).catch(() => null),
+        fetch("/api/ridges/recommend").then(r => r.json()).catch(() => null),
+        fetch("/api/ridges/framework-map").then(r => r.json()).catch(() => null)
+      ])
+      
+      setLeaderboardData(leaderboard)
+      setAnalysisData(analysis)
+      setRecommendData(recommend)
+      setFrameworkData(framework)
+      
+      // Get last ingest time
+      const ingestStatus = await fetch("/api/ridges/ingest").then(r => r.json()).catch(() => null)
+      if (ingestStatus?.lastIngest) {
+        setLastIngest(ingestStatus.lastIngest)
+      }
+    } catch (error) {
+      console.error("Failed to fetch Ridges data:", error)
+    } finally {
+      setRidgesLoading(false)
+    }
+  }, [])
+
+  const handleIngest = async () => {
+    setIsIngesting(true)
+    try {
+      const response = await fetch("/api/ridges/ingest", { method: "POST" })
+      const data = await response.json()
+      
+      if (response.ok) {
+        setLastIngest(data.timestamp)
+        // Refresh all Ridges data after ingestion
+        await fetchRidgesData()
+      }
+    } catch (error) {
+      console.error("Failed to ingest:", error)
+    } finally {
+      setIsIngesting(false)
+    }
+  }
 
   const handleSearch = async (query: string, type: string) => {
     if (!query && !type) {
@@ -162,11 +223,19 @@ export default function SNappYDashboard() {
         <StatsCards memories={memories} />
 
         {/* Tabs */}
-        <Tabs defaultValue="memories" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="memories" className="space-y-4" onValueChange={(v) => {
+          if (v === "ridges" && !leaderboardData) {
+            fetchRidgesData()
+          }
+        }}>
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="memories" className="gap-2">
               <History className="h-4 w-4" />
               <span className="hidden sm:inline">Memories</span>
+            </TabsTrigger>
+            <TabsTrigger value="ridges" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Ridges</span>
             </TabsTrigger>
             <TabsTrigger value="add" className="gap-2">
               <Database className="h-4 w-4" />

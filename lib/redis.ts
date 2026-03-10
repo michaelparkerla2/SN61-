@@ -35,3 +35,10 @@ export const KEYS = {
   PLANS: `${SNAPPY_PREFIX}plans`,
   REDFEED_LAST_SYNC: `${SNAPPY_PREFIX}redfeed:last_sync`,
 }
+
+// Ridges prefix and keys
+export const RIDGES_PREFIX = "ridges:"
+export const RIDGES_KEYS = {
+  LAST_INGEST: `${RIDGES_PREFIX}last_ingest`,
+  STATS: `${RIDGES_PREFIX}stats`,
+}
