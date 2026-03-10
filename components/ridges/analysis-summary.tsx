@@ -80,7 +80,7 @@ export function AnalysisSummary({ data, isLoading }: AnalysisSummaryProps) {
     )
   }
 
-  if (!data) {
+  if (!data || !data.methodGroups) {
     return (
       <Card>
         <CardHeader>
@@ -88,14 +88,23 @@ export function AnalysisSummary({ data, isLoading }: AnalysisSummaryProps) {
             <BarChart3 className="h-5 w-5" />
             Analysis Summary
           </CardTitle>
-          <CardDescription>No analysis data available. Ingest data first.</CardDescription>
+          <CardDescription>No analysis data available. Click &quot;Sync &amp; Analyze&quot; to get started.</CardDescription>
         </CardHeader>
       </Card>
     )
   }
 
-  const behavioral = data.methodGroups.behavioral_detection
-  const fingerprinting = data.methodGroups.fingerprinting
+  const emptyMethodGroup: MethodGroup = {
+    count: 0,
+    avgScore: 0,
+    medianScore: 0,
+    topScore: 0,
+    acceptanceRate: 0,
+    miners: []
+  }
+
+  const behavioral = data.methodGroups.behavioral_detection || emptyMethodGroup
+  const fingerprinting = data.methodGroups.fingerprinting || emptyMethodGroup
 
   return (
     <div className="space-y-4">
@@ -170,7 +179,7 @@ export function AnalysisSummary({ data, isLoading }: AnalysisSummaryProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {data.signalEffectiveness.slice(0, 8).map((signal) => (
+            {(data.signalEffectiveness || []).slice(0, 8).map((signal) => (
               <div key={signal.signal} className="flex items-center gap-3">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
@@ -207,8 +216,8 @@ export function AnalysisSummary({ data, isLoading }: AnalysisSummaryProps) {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {data.saturatedApproaches.length > 0 ? (
-                data.saturatedApproaches.map((approach, i) => (
+              {(data.saturatedApproaches || []).length > 0 ? (
+                (data.saturatedApproaches || []).map((approach, i) => (
                   <li key={i} className="text-sm flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-warning" />
                     {approach}
@@ -231,8 +240,8 @@ export function AnalysisSummary({ data, isLoading }: AnalysisSummaryProps) {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {data.openLanes.length > 0 ? (
-                data.openLanes.map((lane, i) => (
+              {(data.openLanes || []).length > 0 ? (
+                (data.openLanes || []).map((lane, i) => (
                   <li key={i} className="text-sm flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-success" />
                     {lane}
