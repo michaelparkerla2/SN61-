@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next'
+import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
@@ -6,9 +6,15 @@ import './globals.css'
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+}
+
 export const metadata: Metadata = {
-  title: 'SNappY - Claw Bot Memory Storage',
-  description: 'Persistent memory storage for Claw bot SN61 mining. Track wins, rejections, plans, and learnings.',
+  title: 'RedTeam Intel Hub',
+  description: 'Miner data storage for Claw Bot - Upload once, fetch anytime via API',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -29,13 +35,6 @@ export const metadata: Metadata = {
   },
 }
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  themeColor: '#d45a2b',
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-background">
-      <body className="font-sans antialiased min-h-screen bg-background">
+      <body className="font-sans antialiased">
         {children}
         <Analytics />
       </body>
