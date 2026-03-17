@@ -83,6 +83,30 @@ export const SIGNAL_KEYWORDS: Record<string, string[]> = {
   globals_detection: [
     "__playwright", "pptr://", "selenium", "puppeteer", "playwright",
     "phantom", "nightmare", "webdriver globals"
+  ],
+  stack_trace_frameworks: [
+    "pptr:evaluate", "utilityscript", "error stack", "stack trace analysis",
+    "framework stack", "evaluate stack", "anonymous stack"
+  ],
+  webgl_renderer: [
+    "intel iris", "webgl renderer", "unmasked renderer", "debug renderer info",
+    "webgl vendor", "webgl fingerprint renderer"
+  ],
+  chrome_api: [
+    "chrome.app", "chrome.runtime", "chrome api check", "chrome object",
+    "chrome csi", "chrome loadtimes"
+  ],
+  cdp_detection: [
+    "cdp connection", "chrome devtools protocol", "raw cdp", "cdp session",
+    "devtools protocol detection", "cdp evaluate"
+  ],
+  selenium_artifacts: [
+    "$cdc_", "cdc_", "chromedriver", "seleniumbase", "selenium driverless",
+    "selenium execute script", "selenium webdriver"
+  ],
+  nodriver_zendriver: [
+    "nodriver", "zendriver", "python cdp", "undetected chromedriver",
+    "raw cdp python", "cdp python driver"
   ]
 }
 
@@ -140,15 +164,17 @@ export const SIGNAL_CATEGORIES = {
   ],
   fingerprinting: [
     "canvas_fingerprint", "webgl", "audio_fingerprint", 
-    "font_detection", "hash_algorithm"
+    "font_detection", "hash_algorithm", "webgl_renderer"
   ],
   environmental: [
     "property_checks", "magic_numbers", "webdriver_detection",
-    "websocket_detection", "globals_detection"
+    "websocket_detection", "globals_detection", "chrome_api",
+    "selenium_artifacts", "cdp_detection"
   ],
   analysis: [
     "scoring_system", "stack_trace", "heap_memory", 
-    "error_handling", "intl_api"
+    "error_handling", "intl_api", "stack_trace_frameworks",
+    "nodriver_zendriver"
   ]
 }
 
