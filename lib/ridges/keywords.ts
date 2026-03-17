@@ -83,6 +83,42 @@ export const SIGNAL_KEYWORDS: Record<string, string[]> = {
   globals_detection: [
     "__playwright", "pptr://", "selenium", "puppeteer", "playwright",
     "phantom", "nightmare", "webdriver globals"
+  ],
+  magic_numbers_ada: [
+    "cdc_", "adoQpoasnfa", "76pfcZLmcfl", "window property count",
+    "underscore count", "property enumeration", "magic number detection"
+  ],
+  seleniumbase_detection: [
+    "seleniumbase", "undetected chromedriver", "UC mode", "binary patch",
+    "prototype override", "residual symbol", "chromedriver patcher"
+  ],
+  selenium_driverless_detection: [
+    "selenium driverless", "pure CDP", "no chromedriver", "CDP client",
+    "single line stack", "missing chrome.app"
+  ],
+  nodriver_detection: [
+    "nodriver", "ultrafunkamsterdam", "async CDP", "two line stack",
+    "python CDP", "nodriver fingerprint"
+  ],
+  zendriver_detection: [
+    "zendriver", "cdpdriver", "nodriver fork", "serialization tweak",
+    "property parity", "zendriver evaluate"
+  ],
+  puppeteer_extra_detection: [
+    "puppeteer extra", "intel iris", "webgl renderer", "headless chrome",
+    "stealth plugin", "webdriver false"
+  ],
+  playwright_detection: [
+    "playwright", "utilityscript", "microsoft automation", "__playwright",
+    "PW inspector", "playwright global"
+  ],
+  patchright_detection: [
+    "patchright", "playwright fork", "missing chrome.app", "patched playwright",
+    "stealth patches", "utilityscript present"
+  ],
+  human_detection: [
+    "human detection", "clean session", "no automation", "zero CDC",
+    "property baseline", "NSTBrowser human", "plugin enumeration"
   ]
 }
 
