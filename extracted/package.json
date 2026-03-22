@@ -1,0 +1,30 @@
+{
+  "name": "sn61-dfp-v2",
+  "version": "5.0.0",
+  "description": "Bittensor SN61 RedTeam Device Fingerprinter v2 - Deterministic 14+ Signal Groups",
+  "main": "fingerprinter.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node -e \"const { runFingerprinting } = require('./fingerprinter.js'); runFingerprinting().then(console.log)\"",
+    "test": "node test-local.js",
+    "docker:build": "docker build -t taotickler/rt-dfp:latest .",
+    "docker:push": "docker push taotickler/rt-dfp:latest",
+    "docker:run": "docker run --rm taotickler/rt-dfp:latest",
+    "submit": "echo 'Run: btcli s commit --netuid 61 --hash <sha256_of_image>'"
+  },
+  "keywords": [
+    "bittensor",
+    "sn61",
+    "redteam",
+    "fingerprinting",
+    "device-fingerprint"
+  ],
+  "author": "@bittensormax",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
